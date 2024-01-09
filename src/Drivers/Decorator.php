@@ -70,6 +70,13 @@ class Decorator implements DriverContract
     protected $cache;
 
     /**
+     * The before hooks.
+     *
+     * @var array
+     */
+    protected $beforeCallbacks = [];
+
+    /**
      * Create a new driver decorator instance.
      *
      * @param  string  $name
@@ -146,6 +153,13 @@ class Decorator implements DriverContract
         });
     }
 
+    public function before(callable $callback): self
+    {
+        $this->beforeCallbacks[] = $callback;
+
+        return $this;
+    }
+
     /**
      * Resolve the feature value.
      *
@@ -205,6 +219,13 @@ class Decorator implements DriverContract
         if ($features->isEmpty()) {
             return [];
         }
+
+        // loop over all the features
+        // if there is a before hook for any feature value
+        $resolved = $features->each(function ($scopes, $feature) {
+            foreach
+            dd($feature, $scopes);
+        });
 
         return tap($this->driver->getAll($features->all()), function ($results) use ($features) {
             $features->flatMap(fn ($scopes, $key) => Collection::make($scopes)
@@ -275,6 +296,14 @@ class Decorator implements DriverContract
             Event::dispatch(new FeatureRetrieved($feature, $scope, $item['value']));
 
             return $item['value'];
+        }
+
+        foreach ($this->beforeCallbacks as $callback) {
+            $value = $callback($feature, $scope);
+
+            if ($value !== null) {
+                break;
+            }
         }
 
         return tap($this->driver->get($feature, $scope), function ($value) use ($feature, $scope) {

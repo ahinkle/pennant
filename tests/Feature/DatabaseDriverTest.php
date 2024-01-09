@@ -1261,6 +1261,34 @@ class DatabaseDriverTest extends TestCase
             'value' => 'true',
         ]);
     }
+
+    public function test_it_can_override_via_before_hook()
+    {
+        Feature::define('my-feature', function (string $email) {
+            return str_ends_with($email, '@laravel.com');
+        });
+
+        // Feature::before(function (string $feature, string $scope) {
+        //     if (Config::get("pennant.features.{$feature}.enabled") === false) {
+        //         return false;
+        //     }
+        // });
+
+        $this->assertTrue(Feature::for('tim@laravel.com')->active('my-feature'));
+        $this->assertFalse(Feature::for('tim@example.com')->active('my-feature'));
+
+        // Feature::flushCache();
+        // Config::set('pennant.features.my-feature.enabled', false);
+
+        $this->assertFalse(Feature::for('tim@laravel.com')->active('my-feature'));
+        // $this->assertFalse(Feature::for('tim@example.com')->active('my-feature'));
+
+        // Feature::flushCache();
+        // Config::set('pennant.features.my-feature.enabled', true);
+
+        // $this->assertTrue(Feature::for('tim@laravel.com')->active('my-feature'));
+        // $this->assertFalse(Feature::for('tim@example.com')->active('my-feature'));
+    }
 }
 
 class UnregisteredFeature
